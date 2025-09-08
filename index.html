@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Team Hockey Club</title>
+</head>
+<body>
+  <h1>Welcome to Team Hockey Club 🏒</h1>
+  <button id="btn">Ping Function</button>
+  <pre id="out"></pre>
+  <script>
+    document.getElementById('btn').onclick = async () => {
+      const res = await fetch('/.netlify/functions/hello');
+      document.getElementById('out').textContent = await res.text();
+    }
+  </script>
+</body>
+</html>
