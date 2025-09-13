@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Signing you out…</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 4rem auto; }
+    .muted { color:#666 }
+    .ok { color:#0a7a26 }
+    .error { color:#b00020 }
+  </style>
+</head>
+<body>
+  <h1>Signing you out…</h1>
+  <p id="status" class="muted">Please wait.</p>
+
+  <script type="module">
+    // path matches your login page import: /teams/<slug>/logout.html → ../../lib/...
+    import { supabase } from "../../lib/supabaseClient.js";
+
+    function getTeamSlugFromPath() {
+      const parts = window.location.pathname.split("/").filter(Boolean).map(p => p.toLowerCase());
+      if (["index.html","login.html","logout.html"].includes(parts.at(-1))) parts.pop();
+      const tIdx = parts.indexOf("teams");
+      return tIdx !== -1 ? parts[tIdx + 1] : parts.at(-1) || null;
+    }
+    const TEAM_SLUG = getTeamSlugFromPath() || "mashpond";
+    const statusEl = document.getElementById("status");
+
+    const setStatus = (msg, cls="muted") => { statusEl.className = cls; statusEl.textContent = msg; };
+    const go = (path) => { window.location.replace(path); };
+    const redirectToLogin = () => go(`/teams/${TEAM_SLUG}/login.html`);
+
+    (async () => {
+      try {
+        // clear any app storage you might use (harmless if unused)
+        try { localStorage.clear(); } catch {}
+        try { sessionStorage.clear(); } catch {}
+
+        // sign out of Supabase
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          setStatus("Sign-out had a hiccup, sending you to the login page…", "error");
+        } else {
+          setStatus("Signed out. Redirecting…", "ok");
+        }
+      } catch (e) {
+        setStatus("Something went wrong, redirecting to login…", "error");
+      } finally {
+        // send them to the team login either way
+        redirectToLogin();
+      }
+    })();
+  </script>
+
+  <noscript>
+    <p class="error">JavaScript is required to sign out. You can still go to
+      <a href="./login.html">the login page</a>.</p>
+  </noscript>
+</body>
+</html>

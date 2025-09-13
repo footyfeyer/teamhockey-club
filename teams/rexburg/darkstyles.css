@@ -1,0 +1,283 @@
+     :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22d3ee; --ring:#38bdf8; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#0f172a 15%,#0b1220);color:var(--text)}
+
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+    h1{font-size:clamp(20px,3vw,28px);margin:0;letter-spacing:0.2px}
+    .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(34,211,238,.08);border:1px solid rgba(56,189,248,.35);border-radius:999px;color:var(--text)}
+    .muted{color:var(--muted)}
+    button{appearance:none;border:1px solid rgba(56,189,248,.35);background:rgba(34,211,238,.08);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
+    button:hover{border-color:var(--ring);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+    .card{background:var(--card);border:1px solid rgba(148,163,184,.18);border-radius:16px;overflow:hidden}
+    .card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .card-header h2{margin:0;font-size:16px}
+    .status{font-size:13px}
+    table{width:100%;border-collapse:collapse}
+    thead th{position:sticky;top:0;background:rgba(2,6,23,.85);backdrop-filter:blur(8px);font-weight:600;color:#cbd5e1}
+    th,td{padding:10px 12px;border-bottom:1px solid rgba(148,163,184,.15);vertical-align:top;font-size:14px}
+    tbody tr:hover{background:rgba(148,163,184,.06)}
+    .right{ text-align:right }
+    .center{ text-align:center }
+    .wrap{ white-space:normal; word-break:break-word }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; color:#cbd5e1 }
+    .empty{padding:28px;text-align:center;color:var(--muted)}
+    .footer{margin-top:16px;display:flex;gap:8px;align-items:center;justify-content:space-between;color:var(--muted)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Header */
+/* Lighten nav links against dark header background */
+.site-header .nav-links a {
+  color: #f9fafb; /* almost pure white */
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.site-header .nav-links a:hover,
+.site-header .nav-links a.active {
+  color: var(--accent); /* aqua highlight from your palette */
+  background: rgba(34, 211, 238, 0.12);
+  border-radius: 8px;
+}
+
+
+
+/* Flex alignment for header container */
+.site-header .container {
+  display: flex;
+  align-items: center;  /* Vertically centers logo + nav */
+  justify-content: space-between;
+}
+
+.logo {
+  font-weight: bold;
+  line-height: 1.2;
+  color: #1b4332;
+}
+
+.logo span {
+  color: #2d6a4f;
+}
+
+/* Nav links aligned center */
+nav {
+  display: flex;
+  align-items: center;  /* Vertically centers the nav items */
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links li a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+}
+
+.nav-links li a:hover {
+  color: #2d6a4f;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  font-size: 2rem;
+  cursor: pointer;
+}
+/* Logo Image - restrained height */
+.logo img {
+  height: 80px;
+  width: auto;
+  display: block;
+}
+/* Base desktop */
+.site-header #primary-nav { display:flex; align-items:center; gap:16px; }
+.site-header .nav-links { display:flex; align-items:center; gap:16px; list-style:none; margin:0; padding:0; }
+.site-header .hamburger { display:none; }
+
+/* Mobile: collapse into a panel */
+@media (max-width: 860px){
+  .site-header #primary-nav { position:relative; }
+  .site-header .nav-links{
+    position:absolute;
+    top:100%;
+    right:0;
+    left:0;
+    display:none;                /* hidden until .active */
+    flex-direction:column;
+    gap:0;
+    background:rgba(2,6,23,.95); /* dark panel */
+    backdrop-filter:blur(8px);
+    border-top:1px solid rgba(148,163,184,.18);
+    z-index:1000;
+  }
+  .site-header .nav-links li { width:100%; }
+  .site-header .nav-links a{
+    display:block;
+    width:100%;
+    padding:14px 16px;
+    border-radius:0;
+    color:#f9fafb;               /* lighter links for contrast */
+  }
+  .site-header .nav-links.active{ display:flex; } /* <-- toggled by your JS */
+  .site-header .hamburger{
+    display:inline-flex;
+    appearance:none;
+    border:1px solid rgba(56,189,248,.35);
+    background:rgba(34,211,238,.08);
+    color:#e5e7eb;
+    padding:10px 14px;
+    border-radius:12px;
+    line-height:1;
+    cursor:pointer;
+    position:relative;
+    z-index:1001; /* stay above the panel */
+  }
+}
+
+/* Ensure desktop always shows links */
+@media (min-width: 861px){
+  .site-header .nav-links{ display:flex; }
+}
+/* Reorder nav-icons children on mobile */
+.site-header .nav-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Put hamburger first, then avatar/user */
+.site-header .nav-icons .hamburger {
+  order: -1;   /* moves hamburger before avatar */
+}
+.logout-btn {
+  appearance: none;
+  border: 1px solid rgba(56,189,248,.35);
+  background: rgba(34,211,238,.08);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin: 24px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.logout-btn:hover {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(56,189,248,.15);
+}
+/* Center content a bit and add spacing */
+.staff-home {
+  max-width: 600px;
+  margin: 40px auto;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Make links look clean and not clash */
+.staff-links {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.staff-links a {
+  display: inline-block;
+  color: #f9fafb;            /* lighter than var(--text) */
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.staff-links a:hover,
+.staff-links a:focus {
+  background: rgba(34, 211, 238, 0.1); /* subtle aqua highlight */
+  color: var(--accent);
+}
+
+/* Keep logout button aligned under links */
+.staff-home .logout-btn {
+  margin-top: 16px;
+}
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  font-size: 0.875rem;
+  color: #777;
+}
+
+.powered-by {
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  text-align: center;
+}
+
+.powered-by a {
+  text-decoration: underline;
+  color: #9CA3AF;
+  transition: color 0.3s ease;
+}
+
+.powered-by a:hover {
+  color: #4B5563;
+}
+/* Make table use defined column widths */
+.roster-table {
+  width: 100%;
+  table-layout: fixed; /* obey <col> widths; stable layout */
+}
+
+/* Tighter cells + ellipsis for long values */
+.roster-table th,
+.roster-table td {
+  padding: 8px;
+  vertical-align: top;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;   /* change to normal if you prefer wrapping */
+}
+
+/* Inputs span full cell width */
+.roster-table input[type="text"] {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Column width strategy:
+   - ch units: predictable space for characters
+   - clamp(): responsive range that grows on wider screens
+*/
+.roster-table .col-player   { width: clamp(24ch, 36%, 54ch); } /* widest */
+.roster-table .col-phone    { width: clamp(12ch, 16%, 20ch); }
+.roster-table .col-position { width: clamp(10ch, 12%, 18ch); }
+.roster-table .col-jersey   { width:  8ch; }                   /* narrow */
+.roster-table .col-roles    { width: clamp(14ch, 18%, 28ch); }
+.roster-table .col-actions  { width: 12ch; }                   /* buttons */
+
+/* On very wide screens, let the name column breathe even more */
+@media (min-width: 1200px) {
+  .roster-table .col-player { width: clamp(28ch, 42%, 64ch); }
+}
+
+/* Optional: expand the page container on big screens */
+.container--wide {
+  max-width: min(1400px, 96vw); /* use more horizontal space */
+}

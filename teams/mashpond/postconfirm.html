@@ -1,0 +1,67 @@
+<script type="module">
+  import { supabase } from "../../lib/supabaseClient.js";
+
+  const normPhone = p => (p || "").replace(/\D/g, "");
+
+  async function runPostConfirmation() {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
+
+    if (sessionError || !user) {
+      document.body.innerHTML = "<p>Session not ready. Please log in manually.</p>";
+      console.warn("Session error:", sessionError?.message || "No user session found.");
+      return;
+    }
+
+    const meta = user.user_metadata || {};
+    const phoneRaw = meta.phone_number || meta.phone || null;
+    const phone = normPhone(phoneRaw);
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const teamSlug = (parts[1] || "mashpond").toLowerCase();
+
+    if (!phone) {
+      document.body.innerHTML = "<p>Missing phone number. Please contact your team manager.</p>";
+      console.warn("Missing phone number in user metadata.");
+      return;
+    }
+
+    document.body.innerHTML = "<p>Linking your team membership…</p>";
+
+    try {
+      // Upsert user profile
+      const { error: upsertErr } = await supabase.rpc("upsert_profile_minimal", {
+        p_user_id: user.id,
+        p_full_name: meta.full_name || null,
+        p_phone_number: phoneRaw || null,
+      });
+
+      if (upsertErr) {
+        console.warn("upsert_profile_minimal error:", upsertErr.message);
+        document.body.innerHTML = "<p>Could not create user profile. Please try again.</p>";
+        return;
+      }
+
+      // Claim team membership
+      const { error: claimErr } = await supabase.rpc("claim_memberships_by_phone_explicit", {
+        p_user_id: user.id,
+        p_phone: phone,
+        p_team_slug: teamSlug,
+      });
+
+      if (claimErr) {
+        console.warn("claim_memberships_by_phone_explicit error:", claimErr.message);
+        document.body.innerHTML = "<p>Could not link your team membership. Please contact support.</p>";
+        return;
+      }
+
+      // Redirect on success
+      window.location.href = `/teams/${teamSlug}/`;
+
+    } catch (e) {
+      console.warn("Post-confirm RPCs exception:", e?.message || e);
+      document.body.innerHTML = "<p>Something went wrong. Please try again or contact support.</p>";
+    }
+  }
+
+  runPostConfirmation();
+</script>

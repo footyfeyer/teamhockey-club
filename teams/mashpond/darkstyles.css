@@ -239,3 +239,45 @@ footer {
 .powered-by a:hover {
   color: #4B5563;
 }
+/* Make table use defined column widths */
+.roster-table {
+  width: 100%;
+  table-layout: fixed; /* obey <col> widths; stable layout */
+}
+
+/* Tighter cells + ellipsis for long values */
+.roster-table th,
+.roster-table td {
+  padding: 8px;
+  vertical-align: top;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;   /* change to normal if you prefer wrapping */
+}
+
+/* Inputs span full cell width */
+.roster-table input[type="text"] {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Column width strategy:
+   - ch units: predictable space for characters
+   - clamp(): responsive range that grows on wider screens
+*/
+.roster-table .col-player   { width: clamp(24ch, 36%, 54ch); } /* widest */
+.roster-table .col-phone    { width: clamp(12ch, 16%, 20ch); }
+.roster-table .col-position { width: clamp(10ch, 12%, 18ch); }
+.roster-table .col-jersey   { width:  8ch; }                   /* narrow */
+.roster-table .col-roles    { width: clamp(14ch, 18%, 28ch); }
+.roster-table .col-actions  { width: 12ch; }                   /* buttons */
+
+/* On very wide screens, let the name column breathe even more */
+@media (min-width: 1200px) {
+  .roster-table .col-player { width: clamp(28ch, 42%, 64ch); }
+}
+
+/* Optional: expand the page container on big screens */
+.container--wide {
+  max-width: min(1400px, 96vw); /* use more horizontal space */
+}

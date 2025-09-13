@@ -1,0 +1,47 @@
+<script type="module">
+  import { supabase } from "../../lib/supabaseClient.js";
+
+  async function runPostConfirmation() {
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (!user) {
+      document.body.innerHTML = "<p>Session not ready. Please log in manually.</p>";
+      return;
+    }
+
+    const meta = user.user_metadata || {};
+    const phone = meta.phone_number || meta.phone || null;
+    const fullName = meta.full_name || null;
+    const teamSlug = window.location.pathname.split("/").filter(Boolean)[1] || "mashpond";
+
+    if (!phone) {
+      document.body.innerHTML = "<p>Missing phone number. Please contact your team manager.</p>";
+      return;
+    }
+
+    const normalizedPhone = phone.replace(/\D/g, "");
+    try {
+      await finalizeWith(normalizedPhone, teamSlug, fullName);
+      window.location.href = `/teams/${teamSlug}/`;
+    } catch (err) {
+      console.error("Post-confirmation error:", err.message);
+      document.body.innerHTML = "<p>Something went wrong. Please try logging in again.</p>";
+    }
+  }
+
+  async function finalizeWith(phone, teamSlug, fullName = null) {
+    const { error: profileErr } = await supabase.rpc("upsert_profile_minimal", {
+      p_full_name: fullName || null,
+      p_phone_number: phone || null
+    });
+    if (profileErr) throw profileErr;
+
+    const { data: claimResult, error: claimErr } = await supabase.rpc("claim_memberships_by_phone", {
+      p_phone: phone,
+      p_team_slug: teamSlug.toLowerCase()
+    });
+    if (claimErr) throw claimErr;
+  }
+
+  runPostConfirmation();
+</script>
