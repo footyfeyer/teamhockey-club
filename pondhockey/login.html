@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login — TVF Pond Hockey</title>
+  <meta name="description" content="Login to TVF Pond Hockey." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    main.container { max-width: 520px; }
+    form.card { padding: 16px; }
+    .row { margin: 10px 0; }
+    label { display:block; font-weight:600; margin-bottom:6px; }
+    input {
+      width:100%; padding:10px 12px; border-radius:12px;
+      border:1px solid var(--ring); background:rgba(148,163,184,.06); color:var(--text);
+    }
+    .btn { display:inline-flex; gap:8px; align-items:center; padding:10px 14px; border-radius:12px; border:1px solid var(--ring); background:rgba(148,163,184,.06); color:var(--text); cursor:pointer; text-decoration:none; }
+    .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 60%); }
+    .muted { color: var(--muted); }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--ring); }
+    .pill.ok { color: var(--accent); }
+    .pill.err { color: #ff6b6b; border-color: #ff6b6b44; }
+    .hint { font-size:.9rem; color:var(--muted); margin-top:6px; }
+    .toggle { font-size:.9rem; cursor:pointer; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <!-- Standard Header -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom:40px;">
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header">
+        <h1 class="page-title">Login</h1>
+        <p class="lede">Use a magic link (no password) or sign in with a password if you have one.</p>
+      </div>
+
+      <form id="login-form" class="card" novalidate>
+        <div class="row">
+          <label for="email">Email *</label>
+          <input id="email" name="email" type="email" required placeholder="you@example.com" />
+        </div>
+
+        <div class="row" id="password-row" style="display:none;">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" />
+          <div class="hint">Leave password blank if using a magic link.</div>
+        </div>
+
+        <div class="row" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button id="magic-btn" type="button" class="btn primary">Send Magic Link</button>
+          <button id="password-btn" type="submit" class="btn">Sign In</button>
+          <span class="toggle" id="toggle-password">Use password instead</span>
+          <span id="status" class="pill" aria-live="polite"></span>
+        </div>
+
+        <div class="hint">We’ll email you a one-time link to sign in. Make sure this site is allowed in your Supabase Auth redirect URLs.</div>
+      </form>
+
+      <div class="card" style="padding: 16px; margin-top:12px;">
+        <div class="row">
+          <strong>Session:</strong>
+          <span id="session-pill" class="pill">Checking…</span>
+        </div>
+        <div class="row" id="post-login-actions" style="display:none; gap:10px;">
+          <a id="next-link" class="btn primary" href="#">Continue</a>
+          <button id="signout-btn" class="btn" type="button">Sign out</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Standard Footer -->
+    <div id="footer-container"></div>
+  </main>
+
+  <!-- Header/Footer injection -->
+  <script type="module" src="./scripts/site-header.js"></script>
+
+  <!-- Auth logic -->
+  <script type="module">
+    import { supabase } from "../lib/supabaseClient.js";
+
+    const form = document.getElementById('login-form');
+    const magicBtn = document.getElementById('magic-btn');
+    const passwordBtn = document.getElementById('password-btn');
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordRow = document.getElementById('password-row');
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const statusEl = document.getElementById('status');
+    const sessionPill = document.getElementById('session-pill');
+    const postLogin = document.getElementById('post-login-actions');
+    const nextLink = document.getElementById('next-link');
+    const signoutBtn = document.getElementById('signout-btn');
+
+    // Redirect helper from ?next=/path
+    const params = new URLSearchParams(location.search);
+    const next = params.get('next') || 'index.html';
+    nextLink.href = next;
+
+    function setStatus(msg, ok=false) {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'pill' + (msg ? (ok ? ' ok' : ' err') : '');
+    }
+
+    function setSessionPill(txt, ok=false) {
+      sessionPill.textContent = txt;
+      sessionPill.className = 'pill' + (ok ? ' ok' : '');
+    }
+
+    async function refreshSessionUI() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSessionPill('Signed in', true);
+        postLogin.style.display = 'flex';
+      } else {
+        setSessionPill('Signed out', false);
+        postLogin.style.display = 'none';
+      }
+    }
+
+    togglePassword.addEventListener('click', () => {
+      const showing = passwordRow.style.display !== 'none';
+      passwordRow.style.display = showing ? 'none' : 'block';
+      togglePassword.textContent = showing ? 'Use password instead' : 'Use magic link instead';
+    });
+
+    magicBtn.addEventListener('click', async () => {
+      setStatus('');
+      const email = emailEl.value.trim();
+      if (!email) {
+        return setStatus('Please enter your email.');
+      }
+      magicBtn.disabled = true;
+      passwordBtn.disabled = true;
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: new URL(next, location.href).href // redirect back to this origin + next path
+          }
+        });
+        if (error) throw error;
+        setStatus('Magic link sent. Check your email!', true);
+      } catch (e) {
+        console.error(e);
+        setStatus('Could not send magic link.');
+      } finally {
+        magicBtn.disabled = false;
+        passwordBtn.disabled = false;
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setStatus('');
+      const email = emailEl.value.trim();
+      const password = (passEl.value || '').trim();
+      if (!email) return setStatus('Please enter your email.');
+      if (!password) return setStatus('Enter a password, or use the magic link.');
+
+      magicBtn.disabled = true;
+      passwordBtn.disabled = true;
+      try {
+        // Try sign-in first; if user doesn't exist, optionally sign them up
+        let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error && error.message?.toLowerCase().includes('invalid login')) {
+          // Optional auto-signup flow:
+          ({ data, error } = await supabase.auth.signUp({ email, password }));
+        }
+        if (error) throw error;
+
+        setStatus('Signed in!', true);
+        await refreshSessionUI();
+        // Optionally redirect immediately:
+        // location.href = next;
+      } catch (e2) {
+        console.error(e2);
+        setStatus('Sign in failed.');
+      } finally {
+        magicBtn.disabled = false;
+        passwordBtn.disabled = false;
+      }
+    });
+
+    signoutBtn.addEventListener('click', async () => {
+      try {
+        await supabase.auth.signOut();
+      } finally {
+        await refreshSessionUI();
+      }
+    });
+
+    // Initialize UI
+    refreshSessionUI();
+
+    // Handle the case where user returns via magic link
+    supabase.auth.onAuthStateChange((_event, _session) => {
+      refreshSessionUI();
+      // Optional: redirect when session changes and next is set
+      // if (_session) location.href = next;
+    });
+  </script>
+</body>
+</html>

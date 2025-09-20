@@ -1,0 +1,68 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SMS Gateway Smoke Test</title>
+<style>
+  body{font-family:system-ui;margin:3rem auto;max-width:420px}
+  button[disabled]{opacity:.6;cursor:not-allowed}
+  .ok{color:#0a7a26}.err{color:#b00020}
+</style>
+<h1>SMS Smoke Test</h1>
+
+<label>Phone (E.164 or US digits)<br>
+  <input id="phone" placeholder="+13075551234" style="width:100%;padding:8px">
+</label>
+
+<label style="display:block;margin-top:10px;">Message<br>
+  <textarea id="msg" rows="3" style="width:100%;padding:8px">THC Test: Reply Y / N / M (STOP to opt out)</textarea>
+</label>
+
+<button id="send" style="margin-top:12px;padding:10px 14px;border-radius:8px">Send Test SMS</button>
+
+<p id="status"></p>
+<pre id="out" style="white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:8px;margin-top:12px"></pre>
+
+<script>
+  function normalizeUS(input){
+    const digits = input.replace(/[^\d+]/g,'');
+    if (/^\+/.test(digits)) return digits;      // already E.164-ish
+    // if 10 digits, assume US
+    const m = digits.match(/^1?(\d{10})$/);
+    return m ? `+1${m[1]}` : input;
+  }
+
+  const sendBtn = document.getElementById('send');
+  const statusEl = document.getElementById('status');
+  const outEl = document.getElementById('out');
+
+  sendBtn.onclick = async () => {
+    outEl.textContent = '';
+    statusEl.textContent = '';
+    const toRaw = document.getElementById('phone').value.trim();
+    const body = document.getElementById('msg').value.trim();
+    const to = normalizeUS(toRaw);
+
+    if (!to) { statusEl.textContent = 'Enter a phone number.'; statusEl.className='err'; return; }
+
+    sendBtn.disabled = true;
+    statusEl.textContent = 'Sending…';
+    statusEl.className = '';
+
+    try {
+      const res = await fetch('/.netlify/functions/send-test-sms', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ to, body })
+      });
+      const text = await res.text();
+      outEl.textContent = text;
+      statusEl.textContent = res.ok ? 'Sent ✅' : `Error ${res.status}`;
+      statusEl.className = res.ok ? 'ok' : 'err';
+    } catch (e) {
+      statusEl.textContent = 'Network error';
+      statusEl.className = 'err';
+      outEl.textContent = String(e);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  };
+</script>

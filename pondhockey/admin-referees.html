@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • Referee Applications — TVF Pond Hockey</title>
+  <meta name="description" content="Staff-only dashboard to review referee applications." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    .page-title { margin: 0; }
+    .lede { color: var(--muted); margin: 6px 0 0; }
+    .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); cursor:pointer; text-decoration:none; }
+    .btn[disabled] { opacity:.6; cursor:not-allowed; }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--ring); }
+    .pill.ok { color: var(--accent); border-color: color-mix(in oklab, var(--accent), transparent 35%); }
+    .pill.err { color: #ff6b6b; border-color: #ff6b6b44; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--ring); vertical-align: top; }
+    th { text-align: left; color: var(--muted); font-weight: 600; }
+    .row-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .status-badge { padding:2px 8px; border-radius:999px; border:1px solid var(--ring); font-size:.85rem; }
+    .status-new { color: #c9d1d9; }
+    .status-under_review { color: #ffdd57; }
+    .status-approved { color: #7ee787; }
+    .status-rejected { color: #ff7b72; }
+    textarea.staff-notes { width:100%; min-width: 200px; min-height: 60px; border-radius: 10px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); padding:8px 10px; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; }
+    .filters input, .filters select { width:100%; padding:8px 10px; border-radius:10px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <!-- Standard Header -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom: 40px;">
+    <header style="margin: 16px 0;">
+      <h1 class="page-title">Referee Applications</h1>
+      <p class="lede">Staff dashboard to review, triage, and export referee applicants.</p>
+      <div class="controls">
+        <span id="gate-pill" class="pill">Checking access…</span>
+        <button id="refresh-btn" class="btn" disabled>↻ Refresh</button>
+        <button id="export-btn" class="btn" disabled>Export CSV</button>
+      </div>
+    </header>
+
+    <section class="card" aria-live="polite">
+      <div class="card-header">
+        <h2>Applications</h2>
+      </div>
+      <div style="padding: 0 16px 16px;">
+        <div class="filters" style="margin: 10px 0 16px;">
+          <input id="q" type="search" placeholder="Search name/email/phone/certs…" />
+          <select id="status-filter">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="under_review">Under review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select id="limit">
+            <option value="50">Limit: 50</option>
+            <option value="100" selected>Limit: 100</option>
+            <option value="250">Limit: 250</option>
+          </select>
+        </div>
+
+        <div id="table-wrap" class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Name & Contact</th>
+                <th>Experience</th>
+                <th>Availability</th>
+                <th>Certs / Notes</th>
+                <th>Status & Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr><td colspan="6" class="muted">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Standard Footer -->
+    <div id="footer-container"></div>
+  </main>
+
+  <!-- Header/Footer injection -->
+  <script type="module" src="./scripts/site-header.js"></script>
+
+  <!-- Page logic -->
+  <script type="module">
+    import { supabase } from "../lib/supabaseClient.js";
+
+    const gatePill = document.getElementById('gate-pill');
+    const tbody = document.getElementById('tbody');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const q = document.getElementById('q');
+    const statusFilter = document.getElementById('status-filter');
+    const limitSel = document.getElementById('limit');
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }
+
+    function statusClass(s) {
+      return s ? 'status-' + s : 'status-new';
+    }
+
+    function renderRows(rows) {
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">No applications found.</td></tr>';
+        return;
+      }
+      const html = rows.map(row => {
+        const availability = (row.availability || []).join(', ');
+        const contact = [
+          row.email ? `<div>${row.email}</div>` : '',
+          row.phone ? `<div>${row.phone}</div>` : ''
+        ].join('');
+        const exp = (row.years_experience ?? '') + (row.years_experience != null ? ' yrs' : '');
+        const certs = row.certifications || '';
+        const notes = row.notes || '';
+        const staffNotes = row.staff_notes || '';
+
+        return `
+          <tr data-id="${row.id}">
+            <td><div>${fmtDate(row.created_at)}</div></td>
+            <td>
+              <div><strong>${row.full_name || ''}</strong></div>
+              ${contact}
+            </td>
+            <td>${exp}</td>
+            <td>${availability}</td>
+            <td>
+              ${certs ? `<div><em>Certs:</em> ${certs}</div>` : ''}
+              ${notes ? `<div class="muted">${notes}</div>` : ''}
+              <div style="margin-top:8px;">
+                <label class="muted" style="display:block; font-size:.85rem;">Staff notes</label>
+                <textarea class="staff-notes" placeholder="Internal notes…">${escapeHtml(staffNotes)}</textarea>
+              </div>
+            </td>
+            <td>
+              <div class="status-badge ${statusClass(row.status)}">${row.status || 'new'}</div>
+              <div class="row-actions" style="margin-top:8px;">
+                <button class="btn action" data-action="set" data-status="under_review">Under review</button>
+                <button class="btn action" data-action="set" data-status="approved">Approve</button>
+                <button class="btn action" data-action="set" data-status="rejected">Reject</button>
+                <button class="btn action save-notes">Save notes</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      tbody.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    async function checkStaff() {
+      try {
+        const { data, error } = await supabase.rpc('is_staff');
+        if (error) {
+          console.warn('is_staff error:', error);
+          return false;
+        }
+        return !!data;
+      } catch (e) {
+        console.warn('is_staff failed:', e);
+        return false;
+      }
+    }
+
+    async function fetchRows() {
+      const lim = parseInt(limitSel.value, 10) || 100;
+      let query = supabase
+        .from('referee_applicants')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(lim);
+
+      const st = statusFilter.value;
+      if (st) query = query.eq('status', st);
+
+      // naïve search across a few columns
+      const term = q.value.trim();
+      if (term) {
+        // do client-side filter after fetch to keep it simple (small dataset expected)
+        const { data, error } = await query;
+        if (error) throw error;
+        const lc = term.toLowerCase();
+        const filtered = (data || []).filter(r => [
+          r.full_name, r.email, r.phone, r.certifications, r.notes
+        ].some(v => (v || '').toLowerCase().includes(lc)));
+        return filtered;
+      } else {
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      }
+    }
+
+    async function refresh() {
+      setBusy(true);
+      try {
+        const rows = await fetchRows();
+        renderRows(rows);
+        exportBtn.disabled = rows.length === 0;
+      } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">Failed to load applications.</td></tr>';
+        exportBtn.disabled = true;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function setBusy(b) {
+      refreshBtn.disabled = b;
+      exportBtn.disabled = b;
+      gatePill.textContent = b ? 'Working…' : 'Ready';
+      gatePill.className = 'pill ' + (b ? '' : 'ok');
+    }
+
+    async function updateStatus(id, status) {
+      const { error } = await supabase
+        .from('referee_applicants')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+    }
+
+    async function saveNotes(id, notes) {
+      const { error } = await supabase
+        .from('referee_applicants')
+        .update({ staff_notes: notes || null })
+        .eq('id', id);
+      if (error) throw error;
+    }
+
+    function wireActions() {
+      tbody.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button.btn.action');
+        if (!btn) return;
+
+        const tr = e.target.closest('tr[data-id]');
+        const id = tr?.dataset?.id;
+        if (!id) return;
+
+        try {
+          setBusy(true);
+          if (btn.dataset.action === 'set') {
+            const newStatus = btn.dataset.status;
+            await updateStatus(id, newStatus);
+          } else if (btn.classList.contains('save-notes')) {
+            const notesEl = tr.querySelector('textarea.staff-notes');
+            const notes = notesEl?.value?.trim() ?? '';
+            await saveNotes(id, notes);
+          }
+          await refresh();
+        } catch (err) {
+          console.error(err);
+          alert('Update failed. See console.');
+        } finally {
+          setBusy(false);
+        }
+      });
+    }
+
+    function toCsv(rows) {
+      const cols = ['created_at','full_name','email','phone','years_experience','certifications','availability','notes','status','staff_notes','id'];
+      const header = cols.join(',');
+      const body = rows.map(r =>
+        cols.map(c => {
+          let v = r[c];
+          if (Array.isArray(v)) v = v.join('|');
+          if (v == null) v = '';
+          v = String(v).replace(/"/g, '""');
+          return `"${v}"`;
+        }).join(',')
+      ).join('\n');
+      return header + '\n' + body;
+    }
+
+    function download(filename, text) {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function init() {
+      // Gate
+      gatePill.textContent = 'Checking access…';
+      const ok = await checkStaff();
+      if (!ok) {
+        gatePill.textContent = 'Forbidden';
+        gatePill.className = 'pill err';
+        document.getElementById('table-wrap').innerHTML = '<div class="muted" style="padding:16px;">You do not have access to this page.</div>';
+        refreshBtn.disabled = true;
+        exportBtn.disabled = true;
+        return;
+      }
+      gatePill.textContent = 'Ready';
+      gatePill.className = 'pill ok';
+
+      // Wire UI
+      refreshBtn.disabled = false;
+      exportBtn.disabled = false;
+
+      q.addEventListener('input', debounce(refresh, 250));
+      statusFilter.addEventListener('change', refresh);
+      limitSel.addEventListener('change', refresh);
+      refreshBtn.addEventListener('click', refresh);
+
+      exportBtn.addEventListener('click', async () => {
+        setBusy(true);
+        try {
+          const rows = await fetchRows();
+          const csv = toCsv(rows);
+          const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+          download(`referee-applicants-${stamp}.csv`, csv);
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      wireActions();
+      await refresh();
+    }
+
+    function debounce(fn, ms) {
+      let t; return (...args) => {
+        clearTimeout(t); t = setTimeout(() => fn(...args), ms);
+      };
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About — TVF Pond Hockey League</title>
+  <meta name="description" content="About the TVF Pond Hockey League: fun, recreational, co‑ed hockey on Tuesday nights. Schedule, spirit, and registration details." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    /* Page-specific light touches that complement darkstyles.css */
+    .hero { display: grid; gap: 14px; align-items: center; }
+    .hero-row { display: grid; gap: 18px; grid-template-columns: 120px 1fr; }
+    .hero img { width: 100%; height: auto; border-radius: 12px; }
+    .lede { color: var(--muted); margin: 6px 0 0; }
+    .cta-row { display:flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .btn { display:inline-block; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); text-decoration: none; }
+    .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 60%); }
+    .grid { display: grid; gap: 16px; }
+    .grid.cards-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .facts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .fact { border: 1px dashed var(--ring); border-radius: 12px; padding: 10px 12px; }
+    .fact b { display:block; margin-bottom: 4px; color: var(--accent); }
+    .timeline { list-style: none; padding: 0; margin: 0; }
+    .timeline li { border-left: 3px solid var(--ring); padding: 8px 12px; margin: 0 0 8px 6px; }
+    .faq .faq-question { width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); cursor: pointer; }
+    .faq .faq-answer { display: none; padding: 8px 12px; color: var(--muted); }
+    .faq .faq-answer.show { display: block; }
+    @media (max-width: 640px) { .hero-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Standard Header -->
+<div id="navbar-container"></div>
+
+<main class="container" style="padding-bottom: 40px;">
+ <!-- Hero -->
+    <section class="card hero" style="margin:16px 0;">
+      <div class="card-header">
+        <div class="hero-row">
+          <div><img src="images/pondhockey.png" alt="TVF Pond Hockey" /></div>
+          <div>
+            <h1 class="page-title" style="margin:0;">TVF Pond Hockey League</h1>
+            <p class="lede">Fun‑first, recreational, co‑ed hockey. Tuesday nights, low‑key vibe, inclusive play. If you love the game and the community around it, you’ll fit right in.</p>
+
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h1 class="page-title">About the Pond League</h1>
+        <span class="season">2025–2026 Season</span>
+      </div>
+      <div style="padding: 0 16px 16px;">
+        <p class="lede">The <strong>Pond League</strong> is designed for players who want a <em>slow‑paced, fun‑focused</em> experience with minimal competitiveness. It’s an inclusive, 
+		                recreational environment where beginners, seniors, mentors, and C‑level or below skaters can enjoy hockey in a safe and social atmosphere.</p>
+      </div>
+    </section>
+    	
+    <section class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h2>Are you interested in participation</h2>
+      </div>
+      <div style="padding: 0 16px 16px;">
+        <p>We all ready have 8 teams registered for this season, but some of our teams are accepting free agents. Add your details to the free agent form and the Commisioner will attempt 
+		to place you on a team.</p>
+        <div class="cta-row">
+          <a href="free-agent.html" class="btn primary">Free Agent Form</a>
+        </div>
+      </div>
+    </section>
+    	
+    <section class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h2>Apply to be a Referee</h2>
+      </div>
+      <div style="padding: 0 16px 16px;">
+        <p>Interested in working games this season? Tell us about your experience and availability.</p>
+        <div class="cta-row">
+          <a href="referee-application.html" class="btn primary">Referee Application</a>
+        </div>
+      </div>
+    </section>
+    
+    
+
+    <section class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h2>Schedule</h2>
+      </div>
+      <div style="padding: 0 16px 16px;">
+        <ul class="tight">
+          <li><strong>Tuesdays</strong>, 16 weeks: November 7 – February 30.</li>
+          <li>No games on <strong>December 28</strong>.</li>
+          <li><strong>Playoffs:</strong> Weeks of March 5 & March 12.</li>
+          <li><strong>Championship:</strong> March 16.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h2>League spirit</h2>
+      </div>
+      <div style="padding: 0 16px 16px;">
+        <p>This league is <strong>FOR FUN</strong>! A low level of play is required regardless of ability. Players are expected to respect the recreational intent of the league — focusing on camaraderie, safety, and enjoyment above all else.</p>
+      </div>
+    </section>
+
+	  <!-- Standard Footer (injected) -->
+  <div id="footer-container"></div>
+  </main>
+
+
+  <script type="module" src="./scripts/site-header.js"></script>
+</body>
+</html>

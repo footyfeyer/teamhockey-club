@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — TVF Pond Hockey League</title>
+  <meta name="description" content="Get in touch with the TVF Pond Hockey League. Send a message to the commissioner or organizers." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    /* Small page‑specific touches to complement darkstyles.css */
+    .page-title { margin: 0; }
+    .lede { color: var(--muted); margin: 6px 0 0; }
+    .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); cursor:pointer; }
+    .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 60%); }
+    .btn[disabled] { opacity:.6; cursor: not-allowed; }
+    form .row { display:grid; gap:10px; margin:10px 0; }
+    @media (min-width: 720px) { .row.cols-2 { grid-template-columns: 1fr 1fr; } }
+    label { font-weight: 600; display:block; margin-bottom:4px; }
+    input, textarea { width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); }
+    textarea { min-height: 140px; resize: vertical; }
+    .help { color: var(--muted); font-size:.9rem; }
+    .hidden-hp { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+    .status { margin-top:12px; }
+    .status.success { color: var(--accent-2); }
+    .status.error { color: #ff7070; }
+  </style>
+</head>
+<body>
+  <!-- Standard Header (injected) -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom:40px;">
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header">
+        <h1 class="page-title">Contact the League</h1>
+        <p class="lede">Questions about the schedule, teams, or registration? Send a note to the commissioner and we’ll get back to you.</p>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <form id="contact-form" novalidate>
+          <div class="row cols-2">
+            <div>
+              <label for="name">Your name *</label>
+              <input id="name" name="name" type="text" required autocomplete="name" />
+            </div>
+            <div>
+              <label for="email">Email *</label>
+              <input id="email" name="email" type="email" required autocomplete="email" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="subject">Subject <span class="help">(optional)</span></label>
+              <input id="subject" name="subject" type="text" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="message">Message *</label>
+              <textarea id="message" name="message" required></textarea>
+            </div>
+          </div>
+
+          <!-- Honeypot field -->
+          <div class="hidden-hp" aria-hidden="true">
+            <label for="company">Company</label>
+            <input id="company" name="company" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="row">
+            <button id="send-btn" class="btn primary" type="submit">
+              <span id="send-label">Send message</span>
+              <span id="send-spinner" class="pill" style="display:none;">Sending…</span>
+            </button>
+          </div>
+
+          <div id="form-status" class="status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header"><h2 style="margin:0;">What happens when you submit</h2></div>
+      <div style="padding:0 16px 16px;">
+        <ul class="tight">
+          
+          <li>An email is sent to the commissioner’s inbox so we can reply quickly.</li>
+          
+        </ul>
+        
+      </div>
+    </section>
+	
+	  <!-- Standard Footer (injected) -->
+  <div id="footer-container"></div>
+  
+  </main>
+
+  <!-- Header/Footer & page logic -->
+  <script src="./scripts/site-header.js" type="module"></script>
+  <script>
+    // Adjust this to match your Netlify Function file name (e.g., contact.js -> '/.netlify/functions/contact')
+    const CONTACT_FN = '/.netlify/functions/contact';
+
+    const form = document.getElementById('contact-form');
+    const sendBtn = document.getElementById('send-btn');
+    const sendLabel = document.getElementById('send-label');
+    const sendSpinner = document.getElementById('send-spinner');
+    const statusEl = document.getElementById('form-status');
+
+    function setSending(isSending) {
+      if (isSending) {
+        sendBtn.setAttribute('disabled', '');
+        sendSpinner.style.display = 'inline-block';
+        sendLabel.textContent = 'Sending…';
+      } else {
+        sendBtn.removeAttribute('disabled');
+        sendSpinner.style.display = 'none';
+        sendLabel.textContent = 'Send message';
+      }
+    }
+
+    function showStatus(kind, msg) {
+      statusEl.className = 'status ' + kind;
+      statusEl.textContent = msg;
+    }
+
+    function validEmail(value) {
+      return /.+@.+\..+/.test(value);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showStatus('', '');
+
+      // Basic validation
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const subject = form.subject.value.trim();
+      const message = form.message.value.trim();
+      const honey = form.company.value.trim(); // honeypot
+
+      if (honey) {
+        // Bot detected, pretend success
+        showStatus('success', 'Thanks!');
+        form.reset();
+        return;
+      }
+
+      if (!name || !email || !message) {
+        showStatus('error', 'Please fill in your name, email, and message.');
+        return;
+      }
+      if (!validEmail(email)) {
+        showStatus('error', 'Please enter a valid email address.');
+        return;
+      }
+
+      setSending(true);
+      try {
+        const res = await fetch(CONTACT_FN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, subject, message })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const err = data && data.error ? data.error : 'Unknown error';
+          throw new Error(err);
+        }
+
+        showStatus('success', 'Message sent! We\'ll be in touch soon.');
+        form.reset();
+      } catch (err) {
+        console.error('Contact error:', err);
+        showStatus('error', 'Could not send your message: ' + err.message);
+      } finally {
+        setSending(false);
+      }
+    });
+  </script>
+  <noscript><div class="container" style="color:var(--muted);padding:12px;">JavaScript is required to submit this form.</div></noscript>
+</body>
+</html>

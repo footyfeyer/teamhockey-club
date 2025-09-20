@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • Free Agent Submissions — TVF Pond Hockey</title>
+  <meta name="description" content="Staff-only dashboard to review free agent submissions." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    .page-title { margin: 0; }
+    .lede { color: var(--muted); margin: 6px 0 0; }
+    .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); cursor:pointer; text-decoration:none; }
+    .btn[disabled] { opacity:.6; cursor:not-allowed; }
+    .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 60%); }
+    .input { width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); }
+    .table { width:100%; border-collapse: collapse; }
+    .table th, .table td { padding:10px 12px; border-top:1px solid var(--ring); vertical-align: top; }
+    .table th { text-align:left; color: var(--muted); font-weight:600; }
+    .pill.muted { opacity:.9; }
+    .badge { display:inline-block; border:1px solid var(--ring); border-radius:999px; padding:2px 8px; font-size:.85rem; }
+    .status { margin-top:12px; }
+    .status.error { color:#ff7070; }
+    .status.ok { color: var(--accent-2); }
+    .grid { display:grid; gap:12px; }
+	.controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .btn.danger { border-color: #ff7070; }
+    @media (min-width: 820px) { .grid.cols-2 { grid-template-columns: 1fr auto; } }
+    pre.wrap { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <!-- Standard Header (injected) -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom:40px;">
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header grid cols-2">
+        <div>
+          <h1 class="page-title">Free Agent Submissions</h1>
+          <p id="gate-msg" class="lede">Loading…</p>
+        </div>
+        <div class="controls">
+          <input id="q" class="input" type="search" placeholder="Search name, email, phone, summary…" />
+          <button id="refresh" class="btn" type="button">↻ Refresh</button>
+          <button id="export" class="btn" type="button">⤓ Export CSV</button>
+          <span id="count-pill" class="pill muted">—</span>
+        </div>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <div id="gate" class="status"></div>
+        <div id="table-wrap" style="overflow:auto; display:none;">
+          <table class="table" aria-label="Free agent submissions table">
+            
+            <thead>
+              <tr>
+                <th style="min-width:160px;">Submitted</th>
+                <th style="min-width:160px;">Name</th>
+                <th style="min-width:200px;">Email</th>
+                <th style="min-width:160px;">Phone</th>
+                <th style="min-width:420px;">Summary</th>
+                <th style="min-width:160px;">Actions</th>
+              </tr>
+            </thead>
+            
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="controls" style="justify-content:space-between; margin-top:12px;">
+          <div>
+            <button id="prev" class="btn" type="button">← Prev</button>
+            <button id="next" class="btn" type="button">Next →</button>
+          </div>
+          <div id="page-info" class="pill muted"></div>
+        </div>
+      </div>
+    </section>
+        	
+        <!-- Edit Modal -->
+        <dialog id="edit-dialog" style="border:none; border-radius:16px; padding:0; max-width:640px; width:92%;">
+          <form method="dialog" class="card" style="margin:0;">
+            <div class="card-header"><h2 style="margin:0;">Edit Submission</h2></div>
+            <div style="padding:0 16px 16px;">
+              <input type="hidden" id="edit-id" />
+              <div class="row cols-2">
+                <div>
+                  <label for="edit-name">Name</label>
+                  <input id="edit-name" class="input" type="text" />
+                </div>
+                <div>
+                  <label for="edit-email">Email</label>
+                  <input id="edit-email" class="input" type="email" required />
+                </div>
+              </div>
+              <div class="row cols-2">
+                <div>
+                  <label for="edit-phone">Phone</label>
+                  <input id="edit-phone" class="input" type="tel" required />
+                </div>
+              </div>
+              <div class="row">
+                <div>
+                  <label for="edit-summary">Summary</label>
+                  <textarea id="edit-summary" class="input" style="min-height:140px;"></textarea>
+                </div>
+              </div>
+              <div class="controls" style="justify-content:flex-end;">
+                <button id="edit-cancel" class="btn" type="button">Cancel</button>
+                <button id="edit-save" class="btn primary" type="button">Save</button>
+              </div>
+              <div id="edit-status" class="status" aria-live="polite"></div>
+            </div>
+          </form>
+        </dialog>
+        
+	
+	  <!-- Standard Footer (injected) -->
+  <div id="footer-container"></div>
+  
+  </main>
+
+
+
+  <!-- Header/Footer & page logic -->
+  <script src="./scripts/site-header.js" type="module"></script>
+  <script type="module">
+    import { supabase } from '../lib/supabaseClient.js';
+
+    const gateMsg = document.getElementById('gate-msg');
+    const gate = document.getElementById('gate');
+    const tableWrap = document.getElementById('table-wrap');
+    const rowsEl = document.getElementById('rows');
+    const countPill = document.getElementById('count-pill');
+    const q = document.getElementById('q');
+    const refreshBtn = document.getElementById('refresh');
+    const exportBtn = document.getElementById('export');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const pageInfo = document.getElementById('page-info');
+
+    let page = 1;
+    const pageSize = 25;
+    let total = 0;
+    let lastQuery = '';
+	let lastData = [];
+
+    async function requireStaff() {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session || !session.session) {
+        gate.className = 'status error';
+        gate.textContent = 'You must be signed in to view this page.';
+        gateMsg.textContent = 'Sign in required';
+        return false;
+      }
+      // Call your SQL helper (security definer) to confirm staff
+      const { data: isStaff, error: staffErr } = await supabase.rpc('is_staff');
+      if (staffErr) {
+        console.error('is_staff rpc error', staffErr);
+        gate.className = 'status error';
+        gate.textContent = 'Access check failed. Please try again later.';
+        gateMsg.textContent = 'Access error';
+        return false;
+      }
+      if (!isStaff) {
+        gate.className = 'status error';
+        gate.textContent = 'You do not have permission to view this page.';
+        gateMsg.textContent = 'Access denied';
+        return false;
+      }
+      gateMsg.innerHTML = 'Staff access granted <span class="badge">STAFF</span>';
+      gate.className = 'status ok';
+      gate.textContent = '';
+      return true;
+    }
+
+    function fmt(dt) {
+      try { return new Date(dt).toLocaleString(); } catch { return dt; }
+    }
+    
+    function renderRows(items) {
+      rowsEl.innerHTML = items.map(r => `
+        <tr data-id="${r.id}">
+          <td>${fmt(r.created_at)}</td>
+          <td>${r.name ? r.name : '<span class="muted">—</span>'}</td>
+          <td><a href="mailto:${r.email}">${r.email}</a></td>
+          <td><a href="tel:${(r.phone||'').replace(/[^\\d\\+]/g,'')}">${r.phone}</a></td>
+          <td><pre class="wrap" style="margin:0;">${(r.summary||'').replace(/</g,'&lt;')}</pre></td>
+          <td data-cell="actions">
+            <div class="controls" style="gap:6px; flex-wrap:wrap;">
+              <button class="btn" type="button" data-action="edit">Edit</button>
+              <button class="btn danger" type="button" data-action="delete">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+
+    async function fetchPage(query='') {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      lastQuery = query;
+
+      let req = supabase
+        .from('free_agent_applications')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (query) {
+        // Basic ILIKE search across fields
+        req = req.or(
+          `name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%,summary.ilike.%${query}%`
+        );
+      }
+
+      const { data, error, count } = await req;
+      if (error) {
+        console.error('load error', error);
+        gate.className = 'status error';
+        gate.textContent = 'Error loading data: ' + error.message;
+        tableWrap.style.display = 'none';
+        return;
+      }
+
+      total = count || 0;
+      countPill.textContent = `${total} total`;
+      renderRows(data || []);
+	  lastData = data || [];
+      injectActions();
+      pageInfo.textContent = `Page ${page} of ${Math.max(1, Math.ceil((total||0)/pageSize))}`;
+      tableWrap.style.display = 'block';
+
+      prevBtn.disabled = page <= 1;
+      nextBtn.disabled = page >= Math.ceil((total||0)/pageSize);
+    }
+
+    function toCSV(rows) {
+      const headers = ['created_at','name','email','phone','summary'];
+      const escape = (s='') => '"' + String(s).replace(/"/g,'""') + '"';
+      const lines = [headers.join(',')];
+      for (const r of rows) {
+        lines.push([
+          r.created_at, r.name||'', r.email||'', r.phone||'', (r.summary||'').replace(/\n/g,'\\n')
+        ].map(escape).join(','));
+      }
+      return lines.join('\n');
+    }
+
+    async function exportCSV() {
+      // fetch all (cap at, say, 5000 rows to avoid huge files)
+      const { data, error } = await supabase
+        .from('free_agent_applications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5000);
+      if (error) {
+        alert('Export failed: ' + error.message);
+        return;
+      }
+      const csv = toCSV(data || []);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `free_agents_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // Wire UI
+    refreshBtn.addEventListener('click', () => fetchPage(q.value.trim()));
+    exportBtn.addEventListener('click', exportCSV);
+    prevBtn.addEventListener('click', () => { if (page > 1) { page--; fetchPage(lastQuery); } });
+    nextBtn.addEventListener('click', () => { page++; fetchPage(lastQuery); });
+    q.addEventListener('input', () => { page = 1; fetchPage(q.value.trim()); });
+    	
+    function injectActions() {
+      const trs = rowsEl.querySelectorAll('tr');
+      trs.forEach((tr, i) => {
+        const r = lastData[i];
+        if (!r) return;
+        tr.setAttribute('data-id', r.id);
+        // If an actions cell already exists, skip
+        if (tr.querySelector('[data-cell="actions"]')) return;
+        const td = document.createElement('td');
+        td.setAttribute('data-cell', 'actions');
+        td.innerHTML = `
+          <div class="controls" style="gap:6px;">
+            <button class="btn" type="button" data-action="edit">Edit</button>
+            <button class="btn" type="button" data-action="delete">Delete</button>
+          </div>
+        `;
+        tr.appendChild(td);
+      });
+    }
+    	
+    rowsEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const tr = e.target.closest('tr');
+      const id = tr?.getAttribute('data-id');
+      if (!id) return;
+    
+      const action = btn.getAttribute('data-action');
+    
+      if (action === 'delete') {
+        if (!confirm('Delete this submission? This cannot be undone.')) return;
+        const { error } = await supabase
+          .from('free_agent_applications')
+          .delete()
+          .eq('id', id);
+        if (error) {
+          alert('Delete failed: ' + error.message);
+        } else {
+          fetchPage(lastQuery);
+        }
+      }
+    
+      if (action === 'edit') {
+        const rec = lastData.find(x => x.id === id);
+        if (!rec) { alert('Record not found in current page.'); return; }
+        openEditDialog(rec);
+      }
+    });
+        
+    const dlg = document.getElementById('edit-dialog');
+    const editId = document.getElementById('edit-id');
+    const editName = document.getElementById('edit-name');
+    const editEmail = document.getElementById('edit-email');
+    const editPhone = document.getElementById('edit-phone');
+    const editSummary = document.getElementById('edit-summary');
+    const editStatus = document.getElementById('edit-status');
+    const editCancel = document.getElementById('edit-cancel');
+    const editSave = document.getElementById('edit-save');
+    
+    function openEditDialog(r) {
+      editId.value = r.id;
+      editName.value = r.name || '';
+      editEmail.value = r.email || '';
+      editPhone.value = r.phone || '';
+      editSummary.value = r.summary || '';
+      editStatus.textContent = '';
+      if (!dlg.open) dlg.showModal();
+    }
+    
+    editCancel.addEventListener('click', () => dlg.close());
+    
+    editSave.addEventListener('click', async () => {
+      editStatus.textContent = '';
+      const id = editId.value;
+      const updates = {
+        name: editName.value.trim() || null,
+        email: editEmail.value.trim(),
+        phone: editPhone.value.trim(),
+        summary: editSummary.value.trim()
+      };
+      const { error } = await supabase
+        .from('free_agent_applications')
+        .update(updates)
+        .eq('id', id);
+      if (error) {
+        editStatus.className = 'status error';
+        editStatus.textContent = 'Save failed: ' + error.message;
+        return;
+      }
+      dlg.close();
+      fetchPage(lastQuery);
+    });
+        
+
+    // Init
+    (async function init(){
+      // Gate
+      const ok = await requireStaff();
+      if (!ok) return;
+      await fetchPage();
+    })();
+  </script>
+  <noscript><div class="container" style="color:var(--muted);padding:12px;">JavaScript is required to view this page.</div></noscript>
+</body>
+</html>

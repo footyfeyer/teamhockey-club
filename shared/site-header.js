@@ -17,7 +17,7 @@ const navbarHTML = `
   <header class="site-header">
     <div class="container">
       <a class="logo" href="index.html" aria-label="Team Hockey Club Home">
-        <img src="images/THC.png" alt="Team Hockey Club Logo" />
+        <img src="../images/THC.png" alt="Team Hockey Club Logo" />
       </a>
 
       <nav id="primary-nav" aria-label="Main">
@@ -89,6 +89,8 @@ const footerHTML = `
       Powered by 
       <a href="https://essentialservices.coffee">Essential Services Coffee</a>
     </p>
+    <div>Updated for the <strong>2025–2026</strong> season.</div>
+    <div>Questions? Contact your team captain or the league commissioner.</div>
   </footer>
 `;
 

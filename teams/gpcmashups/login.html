@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Team Hockey Club — Login</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 4rem auto; }
+    fieldset { border:1px solid #ddd; border-radius:8px; padding:16px; }
+    .row { margin: 10px 0; }
+    label { display:block; font-weight:600; margin-bottom:4px; }
+    input { width:100%; padding:8px; }
+    button { padding:10px 14px; border-radius:8px; cursor:pointer; }
+    .switch { margin: 12px 0; display:flex; gap:.5rem; }
+    .muted { color:#666; font-size:0.9rem; }
+    .error { color:#b00020; }
+    .ok { color:#0a7a26; }
+  </style>
+</head>
+<body>
+<h1>Team Hockey Club</h1>
+
+<div class="switch">
+  <button id="mode-login" type="button">I already have an account</button>
+  <button id="mode-signup" type="button">I need to sign up</button>
+</div>
+
+<!-- LOGIN -->
+<form id="login-form">
+  <fieldset>
+    <legend>Log In</legend>
+    <div class="row">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" required autocomplete="email" />
+    </div>
+    <div class="row">
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" required autocomplete="current-password" />
+    </div>
+    <button type="submit">Log In</button>
+  </fieldset>
+</form>
+
+<!-- SIGNUP -->
+<form id="signup-form" style="display:none;">
+  <fieldset>
+    <legend>Sign Up</legend>
+    <div class="row">
+      <label for="su-fullname">Full name</label>
+      <input id="su-fullname" type="text" required autocomplete="name" />
+    </div>
+    <div class="row">
+      <label for="su-phone">Phone</label>
+      <input id="su-phone" type="tel" required autocomplete="tel" placeholder="+1 555 123 4567" />
+    </div>
+    <div class="row">
+      <label for="su-email">Email</label>
+      <input id="su-email" type="email" required autocomplete="email" />
+    </div>
+    <div class="row">
+      <label for="su-password">Password</label>
+      <input id="su-password" type="password" required autocomplete="new-password" />
+    </div>
+
+    <button type="submit">Create Account</button>
+    <p class="muted">We’ll use your phone to link your pre-seeded membership for this team.</p>
+  </fieldset>
+</form>
+
+<p id="status" class="muted"></p>
+
+<script type="module">
+  import { supabase } from "../../lib/supabaseClient.js";
+  import { initTeamAuthPage, getTeamSlugFromPath } from "../../shared/services/teamAuth.js";
+
+  const TEAM_SLUG = getTeamSlugFromPath();
+
+  initTeamAuthPage({
+    supabase,
+    teamSlug: TEAM_SLUG,
+  });
+</script>
+
+
+
+</body>
+</html>

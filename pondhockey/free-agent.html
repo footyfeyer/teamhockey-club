@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Free Agent Signup — TVF Pond Hockey League</title>
+  <meta name="description" content="Sign up as a free agent for the TVF Pond Hockey League. Share your contact info and hockey background to be matched with a team." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    .page-title { margin: 0; }
+    .lede { color: var(--muted); margin: 6px 0 0; }
+    .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); cursor:pointer; }
+    .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 60%); }
+    .btn[disabled] { opacity:.6; cursor: not-allowed; }
+    form .row { display:grid; gap:10px; margin:10px 0; }
+    @media (min-width: 720px) { .row.cols-2 { grid-template-columns: 1fr 1fr; } }
+    label { font-weight: 600; display:block; margin-bottom:4px; }
+    input, textarea { width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); }
+    textarea { min-height: 160px; resize: vertical; }
+    .help { color: var(--muted); font-size:.9rem; }
+    .hidden-hp { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+    .status { margin-top:12px; }
+    .status.success { color: var(--accent-2); }
+    .status.error { color: #ff7070; }
+  </style>
+</head>
+<body>
+  <!-- Standard Header (injected) -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom:40px;">
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header">
+        <h1 class="page-title">Free Agent Signup</h1>
+        <p class="lede">Looking for a team? Share your contact info and a quick summary of your hockey background. We'll reach out if there's a good fit.</p>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <form id="fa-form" novalidate>
+          <div class="row cols-2">
+            <div>
+              <label for="name">Your name <span class="help">(optional)</span></label>
+              <input id="name" name="name" type="text" autocomplete="name" />
+            </div>
+            <div>
+              <label for="email">Email *</label>
+              <input id="email" name="email" type="email" required autocomplete="email" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="phone">Phone *</label>
+              <input id="phone" name="phone" type="tel" required inputmode="tel" placeholder="e.g., 307-555-1212" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="summary">Skills & playing history *</label>
+              <textarea id="summary" name="summary" required placeholder="Example: 5 years adult league, mostly wing/center, comfortable at C level. Skates weekly, looking for Tuesday nights."></textarea>
+            </div>
+          </div>
+
+          <!-- Honeypot field -->
+          <div class="hidden-hp" aria-hidden="true">
+            <label for="nickname">Nickname</label>
+            <input id="nickname" name="nickname" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="row">
+            <button id="send-btn" class="btn primary" type="submit">
+              <span id="send-label">Submit</span>
+              <span id="send-spinner" class="pill" style="display:none;">Submitting…</span>
+            </button>
+          </div>
+
+          <div id="form-status" class="status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header"><h2 style="margin:0;">What happens next</h2></div>
+      <div style="padding:0 16px 16px;">
+        <ul class="tight">
+          <li>Your info is saved to the league database for captains/commissioner to review.</li>
+          <li>We may reach out by email or phone to confirm details or team fit.</li>
+          <li>If there’s a spot, we’ll connect you with a captain.</li>
+        </ul>
+      </div>
+    </section>
+	
+	  <!-- Standard Footer (injected) -->
+  <div id="footer-container"></div>
+  
+  </main>
+
+  <!-- Header/Footer & page logic -->
+  <script src="./scripts/site-header.js" type="module"></script>
+  <script>
+    // Netlify function endpoint for free-agent submissions
+    const FREE_AGENT_FN = '/.netlify/functions/free-agent';
+
+    const form = document.getElementById('fa-form');
+    const sendBtn = document.getElementById('send-btn');
+    const sendLabel = document.getElementById('send-label');
+    const sendSpinner = document.getElementById('send-spinner');
+    const statusEl = document.getElementById('form-status');
+
+    function setSending(isSending) {
+      if (isSending) {
+        sendBtn.setAttribute('disabled', '');
+        sendSpinner.style.display = 'inline-block';
+        sendLabel.textContent = 'Submitting…';
+      } else {
+        sendBtn.removeAttribute('disabled');
+        sendSpinner.style.display = 'none';
+        sendLabel.textContent = 'Submit';
+      }
+    }
+
+    function showStatus(kind, msg) {
+      statusEl.className = 'status ' + kind;
+      statusEl.textContent = msg;
+    }
+
+    function validEmail(value) { return /.+@.+\..+/.test(value); }
+    function validPhone(value) { return /[\d\-\.\(\)\s\+]{7,}/.test(value); }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showStatus('', '');
+
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const phone = form.phone.value.trim();
+      const summary = form.summary.value.trim();
+      const honey = form.nickname.value.trim(); // honeypot
+
+      if (honey) {
+        showStatus('success', 'Thanks!');
+        form.reset();
+        return;
+      }
+
+      if (!email || !phone || !summary) {
+        showStatus('error', 'Please provide your email, phone, and a brief summary.');
+        return;
+      }
+      if (!validEmail(email)) {
+        showStatus('error', 'Please enter a valid email address.');
+        return;
+      }
+      if (!validPhone(phone)) {
+        showStatus('error', 'Please enter a valid phone number.');
+        return;
+      }
+
+      setSending(true);
+      try {
+        const res = await fetch(FREE_AGENT_FN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, summary })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const err = data && data.error ? data.error : 'Unknown error';
+          throw new Error(err);
+        }
+
+        showStatus('success', 'Thanks! Your info was submitted.');
+        form.reset();
+      } catch (err) {
+        console.error('Free-agent error:', err);
+        showStatus('error', 'Could not submit: ' + err.message);
+      } finally {
+        setSending(false);
+      }
+    });
+  </script>
+  <noscript><div class="container" style="color:var(--muted);padding:12px;">JavaScript is required to submit this form.</div></noscript>
+</body>
+</html>

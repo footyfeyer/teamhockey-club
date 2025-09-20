@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Referee Application — TVF Pond Hockey League</title>
+  <meta name="description" content="Apply to work as a referee for the TVF Pond Hockey League." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    .form-grid { display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
+    .form-grid .full { grid-column: 1 / -1; }
+    label { display:block; font-weight:600; margin-bottom:6px; }
+    input, select, textarea {
+      width:100%; padding:10px 12px; border-radius:12px;
+      border:1px solid var(--ring); background:rgba(148,163,184,.06); color:var(--text);
+    }
+    .help { color: var(--muted); font-size: .9rem; }
+    .pill.ok { color: var(--accent); }
+    .pill.err { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+
+  <!-- Standard Header -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom:40px;">
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header">
+        <h1 class="page-title">Referee Application</h1>
+        <p class="lede">Tell us about your experience and availability. We’ll review and get back to you.</p>
+      </div>
+
+      <div style="padding:16px;">
+        <form id="ref-form" novalidate>
+          <div class="form-grid">
+            <div class="full">
+              <label for="full_name">Full Name *</label>
+              <input id="full_name" name="full_name" required />
+            </div>
+
+            <div>
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" placeholder="you@example.com" />
+            </div>
+
+            <div>
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" type="tel" placeholder="+1 (555) 555-1212" />
+              <div class="help">We’ll normalize this to E.164; any format is fine.</div>
+            </div>
+            
+            <div>
+              <label for="years_experience">Years Experience</label>
+              <input 
+                id="years_experience" 
+                name="years_experience" 
+                type="number" 
+                min="0" 
+                step="1" 
+                placeholder="e.g., 3" 
+              />
+            </div>
+                        <div>
+              <label for="certifications">Certifications</label>
+              <input id="certifications" name="certifications" placeholder="e.g., USA Hockey, local clinics" />
+            </div>
+
+            <div class="full">
+              <label>Availability (check all that apply)</label>
+              <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                <label><input type="checkbox" name="availability" value="tuesdays"> Tuesdays</label>
+                <label><input type="checkbox" name="availability" value="sub_on_call"> Sub / On-call</label>
+                <label><input type="checkbox" name="availability" value="playoffs"> Playoffs</label>
+              </div>
+              <div class="help">You can adjust specifics later with the coordinator.</div>
+            </div>
+
+            <div class="full">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes" rows="4" placeholder="Anything else we should know?"></textarea>
+            </div>
+
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:10px;">
+            <button id="submit-btn" type="submit" class="btn primary">Submit Application</button>
+            <span id="status" class="pill" aria-live="polite"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Standard Footer -->
+    <div id="footer-container"></div>
+  </main>
+
+  <!-- Header/Footer injection -->
+  <script type="module" src="./scripts/site-header.js"></script>
+
+  <!-- Submission logic -->
+<script type="module">
+  import { supabase } from "../lib/supabaseClient.js"; // adjust path if needed
+
+  const form = document.getElementById('ref-form');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit-btn');
+
+  // Small helpers
+  const byId = (id) => document.getElementById(id);
+  const val = (id) => (byId(id)?.value ?? '').trim();
+
+  function getAvailability() {
+    return Array.from(document.querySelectorAll('input[name="availability"]:checked'))
+      .map(cb => cb.value);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusEl.textContent = '';
+    statusEl.className = 'pill';
+    submitBtn.disabled = true;
+
+    // Read values safely
+    const full_name = val('full_name');
+    const email = val('email') || null;
+    const phone = val('phone') || null;
+
+    // years_experience is now a number input
+    const yexpRaw = val('years_experience');
+    const years_experience = yexpRaw === '' ? null : Number.parseInt(yexpRaw, 10);
+
+    const certifications = val('certifications') || null;
+    const availability = getAvailability();
+    const notes = val('notes') || null;
+
+    // Minimal required validation
+    if (!full_name) {
+      statusEl.textContent = 'Please provide your name.';
+      statusEl.className = 'pill err';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const payload = {
+      full_name,
+      email,
+      phone,
+      years_experience: Number.isNaN(years_experience) ? null : years_experience,
+      certifications,
+      availability: availability.length ? availability : null,
+      notes
+    };
+
+    try {
+      const { error } = await supabase.from('referee_applicants').insert(payload);
+      if (error) throw error;
+
+      statusEl.textContent = 'Thanks! Your application has been received.';
+      statusEl.className = 'pill ok';
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = 'Submission failed. Please try again.';
+      statusEl.className = 'pill err';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

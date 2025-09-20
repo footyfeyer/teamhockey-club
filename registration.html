@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Team Hockey Club — Player Registration</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 3rem auto; padding: 1rem; }
+    h1 { margin-bottom: 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: 600; }
+    input, button { width: 100%; padding: 10px; margin-top: 0.5rem; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #0a7a26; color: #fff; font-weight: 600; cursor: pointer; }
+    button:hover { background: #095f1d; }
+    .disclosure { font-size: 0.85rem; color: #444; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Team Hockey Club Registration</h1>
+  <form method="POST" action="/.netlify/functions/register-player">
+    <label>
+      Name
+      <input type="text" name="name" required>
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" required>
+    </label>
+    <label>
+      Mobile Phone Number
+      <input type="tel" name="phone" placeholder="+18155551234" required>
+      <div class="disclosure">
+        By providing your mobile number, you agree to receive SMS messages from Team Hockey Club about game reminders, roster updates, and schedule changes. Message frequency varies. Reply STOP to opt out, HELP for help. Message &amp; data rates may apply.
+      </div>
+    </label>
+    <button type="submit">Register</button>
+  </form>
+</body>
+</html>

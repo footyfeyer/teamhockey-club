@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mashpond — Team Access</title>
+  <link rel="stylesheet" href="../darkstyles.css">
+  <style>
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .hidden { display: none !important; }
+    .card { background:#121212; border:1px solid #252525; border-radius:12px; padding:1rem; margin:1rem 0; }
+    .muted { color:#9aa0a6; }
+    .table { width:100%; border-collapse: collapse; }
+    .table th, .table td { text-align:left; padding:.6rem; border-bottom:1px solid #262626; }
+  </style>
+</head>
+<body>
+  <site-header></site-header>
+
+  <div class="container">
+    <header class="page">
+      <h1>Mashpond — Team Access</h1>
+      <div class="muted" id="session-pill">Checking session…</div>
+    </header>
+
+    <!-- Gate -->
+    <section class="card" id="gate-card" aria-live="polite">
+      <div id="gate-status" class="muted">Authorizing…</div>
+      <div id="gate-help" class="muted hidden">
+        You need to be signed in and on this team to continue.
+      </div>
+    </section>
+
+    <!-- Member panel (read-only roster) -->
+    <section class="card hidden" id="member-panel">
+      <h2>Team Roster</h2>
+      <div class="muted" id="roster-count">Loading…</div>
+      <div style="overflow:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Phone</th>
+              <th>Position</th>
+              <th>Jersey #</th>
+              <th>Roles</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Manager panel (placeholder for later steps) -->
+    <section class="card hidden" id="manager-panel">
+      <h2>Team Manager</h2>
+      <p class="muted">You’re a manager. We’ll add edit tools here next.</p>
+    </section>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

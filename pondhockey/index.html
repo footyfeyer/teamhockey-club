@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TVF Pond Hockey League — Home</title>
+  <meta name="description" content="TVF Pond Hockey is a fun‑first, recreational, co‑ed league. Tuesday nights, low‑key vibe, inclusive play. Learn more, see the rules, and join the fun." />
+  <link rel="stylesheet" href="darkstyles.css" />
+  <style>
+    /* Page-specific light touches that complement darkstyles.css */
+    .hero { display: grid; gap: 14px; align-items: center; }
+    .hero-row { display: grid; gap: 18px; grid-template-columns: 120px 1fr; }
+    .hero img { width: 100%; height: auto; border-radius: 12px; }
+    .lede { color: var(--muted); margin: 6px 0 0; }
+    .cta-row { display:flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .btn { display:inline-block; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); text-decoration: none; }
+    .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 60%); }
+    .grid { display: grid; gap: 16px; }
+    .grid.cards-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .facts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .fact { border: 1px dashed var(--ring); border-radius: 12px; padding: 10px 12px; }
+    .fact b { display:block; margin-bottom: 4px; color: var(--accent); }
+    .timeline { list-style: none; padding: 0; margin: 0; }
+    .timeline li { border-left: 3px solid var(--ring); padding: 8px 12px; margin: 0 0 8px 6px; }
+    .faq .faq-question { width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--ring); background: rgba(148,163,184,.06); color: var(--text); cursor: pointer; }
+    .faq .faq-answer { display: none; padding: 8px 12px; color: var(--muted); }
+    .faq .faq-answer.show { display: block; }
+    @media (max-width: 640px) { .hero-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <!-- Standard Header (injected) -->
+  <div id="navbar-container"></div>
+
+  <main class="container" style="padding-bottom: 40px;">
+    <!-- Hero -->
+    <section class="card hero" style="margin:16px 0;">
+      <div class="card-header">
+        <div class="hero-row">
+          <div><img src="images/pondhockey.png" alt="TVF Pond Hockey" /></div>
+          <div>
+            <h1 class="page-title" style="margin:0;">TVF Pond Hockey League</h1>
+            <p class="lede">Fun‑first, recreational, co‑ed hockey. Tuesday nights, low‑key vibe, inclusive play. If you love the game and the community around it, you’ll fit right in.</p>
+            <div class="cta-row">
+              <a class="btn primary" href="about.html">Learn about the Pond League</a>
+              <a class="btn" href="rules.html">Read the Rules</a>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <div class="facts">	
+          <div class="fact">
+            <b>When</b>
+            <span>
+              Tuesdays<br />
+              7:00 PM<br />
+              8:15 PM<br />
+              9:30 PM
+            </span>
+          </div>
+          <div class="fact"><b>Who</b><span>Beginners, seniors, mentors. Played at C‑level & below</span></div>
+          <div class="fact"><b>Format</b><span>Three 17‑minute periods · No goalies · Pond Hockey Goals</span></div>
+          <div class="fact"><b>Spirit</b><span>Fun, friendly, and safe — zero tolerance for nonsense</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Links -->
+    <section class="grid cards-2" style="margin:16px 0;">
+      <article class="card">
+        <div class="card-header"><h2 style="margin:0;">League Rules</h2></div>
+        <div style="padding:0 16px 16px;">
+          <p class="lede">All the basics: roster rules, gameplay, penalties, and our zero‑tolerance policy.</p>
+          <p><a class="btn" href="rules.html" aria-label="Read the TVF Pond League Rules">Open Rules</a></p>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-header"><h2 style="margin:0;">About the Pond League</h2></div>
+        <div style="padding:0 16px 16px;">
+          <p class="lede">New here? Get the vibe, the schedule, and how to get placed on a team.</p>
+          <p><a class="btn" href="about.html" aria-label="Learn about the Pond League">Learn More</a></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Season Snapshot -->
+    <section class="card" style="margin:16px 0;">
+      <div class="card-header"><h2 style="margin:0;">Season Snapshot (Pond)</h2></div>
+      <div style="padding:0 16px 16px;">
+        <ul class="timeline">
+          <li><strong>Regular Season:</strong> 16 Tuesdays · Nov 7 – Feb 30</li>
+          <li><strong>No Games:</strong> Dec 28</li>
+          <li><strong>Playoffs:</strong> Weeks of Mar 5 & Mar 12</li>
+          <li><strong>Championship:</strong> Mar 16</li>
+        </ul>
+        <p class="lede" style="margin-top:10px;">Exact ice times and team matchups are shared by captains and posted on the board weekly.</p>
+      </div>
+    </section>
+
+    <!-- FAQ (optional, uses existing FAQ wiring if present) -->
+    <section class="card faq" style="margin:16px 0;">
+      <div class="card-header"><h2 style="margin:0;">FAQ</h2></div>
+      <div style="padding:0 16px 16px;">
+        <button class="faq-question">What is the expected skill level in Pond Hockey?</button>
+        <div class="faq-answer">This is a strictly non‑competitive recreational co‑ed league with players of all abilities. 
+		                        The Pond League is intentionally low‑key. It’s great for beginners, seniors, mentors, and C‑level or below players.
+                                Highly skilled players can be an asset to the league as mentors and are free to join provided they embrace the character of the League and facilitate learning
+								the game for teammates and opponents. The goal is fun, safety, and development of team chemistry. 
+		                        Captains and referees will help uphold this playing standard</div>
+
+        <button class="faq-question" style="margin-top:10px;">Can I register a whole team?</button>
+        <div class="faq-answer">Team registration is closed for this season. We are maxed out at 8 teams. Free agents can also be placed on existing teams if required by the commissioner.</div>
+
+        <button class="faq-question" style="margin-top:10px;">Where can I see the rules?</button>
+        <div class="faq-answer">Right here: <a href="rules.html">League Rules</a>. Quick hits: no checking, no slapshots, three 17‑minute periods, and a friendly, safety‑first pace.</div>
+      </div>
+    </section>
+	  <!-- Standard Footer (injected) -->
+  <div id="footer-container"></div>
+  </main>
+
+  <!-- Header/Footer & basic UI hooks -->
+  <script src="scripts/site-header.js" type="module"></script>
+ 
+</body>
+</html>
